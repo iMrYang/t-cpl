@@ -1,0 +1,56 @@
+name: build
+
+on:
+  pull_request:
+    branches: [ master, develop, feature* ]
+  push:
+    branches: [ master, develop, feature* ]
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  # Windows
+  build-windows:
+    name: windows
+    runs-on: windows-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+      - name: Build (x86_64)
+        run: perl scripts/manage.pl build -p x86_64
+      - name: Test (x86_64)
+        run: perl scripts/manage.pl test -p x86_64
+      - name: Build (x86)
+        run: perl scripts/manage.pl build -p x86
+      - name: Test (x86)
+        run: perl scripts/manage.pl test -p x86
+  # Ubuntu
+  build-ubuntu:
+    name: ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+      - name: Prepare compile enviroment
+        run: |
+          sudo apt-get update
+          sudo apt install gcc-multilib -y
+      - name: Build (x86_64)
+        run: perl scripts/manage.pl build -p x86_64
+      - name: Test (x86_64)
+        run: perl scripts/manage.pl test -p x86_64
+      - name: Build (x86)
+        run: perl scripts/manage.pl build -p x86
+      - name: Test (x86)
+        run: perl scripts/manage.pl test -p x86
+  # MacOS
+  build-macos:
+    name: macos
+    runs-on: macos-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+      - name: Build (x86_64)
+        run: perl scripts/manage.pl build
+      - name: Test (x86_64)
+        run: perl scripts/manage.pl test
