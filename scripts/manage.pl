@@ -91,7 +91,7 @@ sub build {
         }
 
     } else {
-        die("Error: unknown system: $^O\n");
+        print("Warning: unknown system: $^O\n");
     }
 
     # cross compile

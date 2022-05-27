@@ -17,11 +17,15 @@ jobs:
       - name: Build (x86_64)
         run: perl scripts/manage.pl build -p x86_64
       - name: Test (x86_64)
-        run: perl scripts/manage.pl test -p x86_64
+        run: perl scripts/manage.pl test
+      - name: Clean
+        run: perl scripts/manage.pl clean
       - name: Build (x86)
         run: perl scripts/manage.pl build -p x86
       - name: Test (x86)
-        run: perl scripts/manage.pl test -p x86
+        run: perl scripts/manage.pl test
+      - name: Clean
+        run: perl scripts/manage.pl clean
   # Ubuntu
   build-ubuntu:
     name: ubuntu
@@ -36,11 +40,15 @@ jobs:
       - name: Build (x86_64)
         run: perl scripts/manage.pl build -p x86_64
       - name: Test (x86_64)
-        run: perl scripts/manage.pl test -p x86_64
+        run: perl scripts/manage.pl test
+      - name: Clean
+        run: perl scripts/manage.pl clean
       - name: Build (x86)
         run: perl scripts/manage.pl build -p x86
       - name: Test (x86)
-        run: perl scripts/manage.pl test -p x86
+        run: perl scripts/manage.pl test
+      - name: Clean
+        run: perl scripts/manage.pl clean
   # MacOS
   build-macos:
     name: macos
@@ -52,3 +60,5 @@ jobs:
         run: perl scripts/manage.pl build
       - name: Test (x86_64)
         run: perl scripts/manage.pl test
+      - name: Clean
+        run: perl scripts/manage.pl clean
