@@ -43,8 +43,8 @@ foreach(_test_file ${CPROJECT_TEST_SOURCE_FILES})
     if (WIN32)
       add_custom_command(TARGET ${_test_file_shared} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CPROJECT_TEST_OUTPUT_DIRECTORY}/${CPROJECT_NAME}.dll
-          ${CPROJECT_EXAMPLE_OUTPUT_DIRECTORY}
+          ${CPROJECT_SHARED_OUTPUT_DIRECTORY}/${CPROJECT_NAME}.dll
+          ${CPROJECT_TEST_OUTPUT_DIRECTORY}
       )
     endif()
     # add test

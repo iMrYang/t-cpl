@@ -118,7 +118,12 @@ add_custom_target(cproject_build_info
 find_package(Threads REQUIRED)
 set(CPROJECT_DEPS_TARGETS "cproject_build_info")
 set(CPROJECT_DEPS_LIBS ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+link_libraries(${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set(CPROJECT_DEPS_INCLUDE_DIRS "")
+if (WIN32)
+  set(CPROJECT_DEPS_LIBS ${CPROJECT_DEPS_LIBS} ws2_32 Crypt32)
+  link_libraries(ws2_32 Crypt32)
+endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/deps/CMakeLists.txt)
 
