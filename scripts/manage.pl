@@ -1,229 +1,175 @@
 #!/usr/bin/perl
 
+use strict;
 use Cwd 'abs_path';
 use File::Basename;
 use File::Path;
+use Getopt::Long;
 
-# c-project-layout directory
-$project_root_dir = dirname(dirname(abs_path($0)));
-$project_build_dir = "$project_root_dir/build";
-$project_toolchain_dir = "$project_root_dir/CMake/Toolchains";
+# read-only config
+my $cmake_source_dir = dirname(dirname(abs_path($0)));
+my $cmake_work_dir = $cmake_source_dir . "/build";
+my $cmake_toolchain_dir = "$cmake_source_dir/CMake/Toolchains";
+my $cmd = "";
+# user config
+my $cmake_system_processor = "";
+my $cmake_build_type = "Release";
+my $cmake_toolset_name = "";
+my $cmake_toolchain_file = "";
+my $cmake_install_prefix = "";
 
-# config
-$cmake_work_dir = "${project_build_dir}";
-$cmake_toolchain_file = "";
-$cmake_build_type = "Release";
-$CMAKE_SYSTEM_PROCESSOR = "";
-$cmake_toolset_name = "";
-$cmake_install_prefix= "";
+# parse command line arguments
+$cmd = shift @ARGV;
+GetOptions(
+    "p:s" => \$cmake_system_processor,
+    "t:s" => \$cmake_build_type,
+    "toolset:s" => \$cmake_toolset_name,
+    "toolchain:s" => \$cmake_toolchain_file,
+    "prefix:s" => \$cmake_install_prefix,
+    "h:s" => \$cmd,
+    "help:s" => \$cmd
+);
 
-sub help()
-{
+# platform init params
+if ("$^O" eq "MSWin32") {
+    # windows
+
+    # init system processor
+    if ("$cmake_system_processor" eq "") {
+        $cmake_system_processor = (log(~0 +1)/log(2) eq 64) ? "x86_64" : "x86";
+    }
+}
+
+# function: build
+sub build {
+    # cmake init
+    if (! -d $cmake_work_dir) {
+        mkpath($cmake_work_dir);
+    }
+    if ("$cmake_build_type" eq "") {
+        die("Error: cmake build type is null.");
+    }
+    my $cmake_init_project_cmd = "cmake ${cmake_source_dir} -DCMAKE_BUILD_TYPE=$cmake_build_type";
+
+    # platform specific
+    if ("$^O" eq "MSWin32") {
+        # windows
+
+        # add platform
+        if ("$cmake_system_processor" eq "") {
+            die("Error: cmake system processor is null.");
+
+        } elsif ("$cmake_system_processor" eq "x86_64") {
+            # x64
+            $cmake_init_project_cmd .= " -A x64";
+
+        } elsif ("$cmake_system_processor" eq "x86") {
+            # x86
+            $cmake_init_project_cmd .= " -A Win32";
+
+        } else {
+            # arm
+            $cmake_init_project_cmd .= " -A ARM";
+        }
+
+        # add toolset
+        if ("$cmake_toolset_name" ne "") {
+            $cmake_init_project_cmd .= " -T ${cmake_toolset_name}";
+        }
+
+        # set windows toolchain
+        if ($cmake_toolchain_file eq "") {
+            $cmake_toolchain_file = "$cmake_toolchain_dir/Windows_$cmake_system_processor.cmake";
+        }
+
+    } elsif ("$^O" eq "linux") {
+        # linux
+
+        # if set sysmtem processor and toolchain is null, use build-in toolchain
+        if (("$cmake_system_processor" ne "") && $cmake_toolchain_file eq "") {
+            $cmake_toolchain_file = "$cmake_toolchain_dir/Linux_x86.cmake";
+        }
+
+    } else {
+        die("Error: unknown system: $^O\n");
+    }
+
+    # cross compile
+    if ($cmake_toolchain_file ne "") {
+        # check toolchain exist
+        if (! -f $cmake_toolchain_file) {
+            die("Error: toolchain file not exist: $cmake_toolchain_file\n");
+        }
+        # add toolchain file
+        $cmake_init_project_cmd .= " -DCMAKE_TOOLCHAIN_FILE=$cmake_toolchain_file";
+    }
+
+    # install prefix
+    if ($cmake_install_prefix ne "") {
+        $cmake_init_project_cmd .= " -DCMAKE_INSTALL_PREFIX=$cmake_install_prefix";
+    }
+
+    # cmake init project
+    chdir($cmake_work_dir) and system("$cmake_init_project_cmd") and die("Error: cmake init project failed.");
+
+    # cmake build project
+    chdir($cmake_work_dir) and system("cmake --build . --config $cmake_build_type") and die("Error: cmake build project failed.");
+}
+
+# function
+sub test {
+    # cmake test project
+    system("ctest --test-dir $cmake_work_dir/tests") and die("Error: cmake test project failed.");
+}
+
+# function: clean
+sub clean {
+    # clean build directory
+    if (-d $cmake_work_dir) {
+        rmtree($cmake_work_dir);
+    }
+}
+
+# function: install
+sub install {
+    # install
+    system("cmake --install $cmake_work_dir") and die("Error: cmake install failed.");
+}
+
+# function: help
+sub help {
     print("\n");
     print("Usage: $0 [Command] [Options]\n");
     print("\n");
     print("Command:\n");
-    print("    build  - Build project\n");
-    print("    test   - Test project\n");
-    print("    clean  - Clean project\n");
+    print("    build            - Build project\n");
+    print("    test             - Test project\n");
+    print("    install          - Install project\n");
+    print("    clean            - Clean build project\n");
+    print("    help             - Display help and exit\n");
     print("\n");
     print("Options:\n");
-    print("    -c           - CMake cross compile toolchains file\n");
-    print("    -t           - Target build type('Release','Debug'), default is 'Release'\n");
-    print("    -p           - Target build arch('x86','x86_64')\n");
-    print("    -T           - Specify toolset name if supported by generator(ex: VS2017 set 'v141_xp' to support WinXP )\n");
-    print("    -h           - Display help and exit\n");
-    print("        --prefix - Install directory prefix\n");
+    print("    -p               - Target build arch [x86|x86_64|..] (default: $cmake_system_processor)\n");
+    print("    -t               - Target build type[Release|Debug] (default: ${cmake_build_type})\n");
+    print("        --toolchain  - CMake cross compile toolchains file (default: ${cmake_toolchain_file})\n");
+    print("        --toolset    - Specify toolset name(ex: VS2017 set 'v141_xp' to support WinXP) (default: ${cmake_toolset_name})\n");
+    print("    -p, --prefix     - Install directory(default: ${cmake_install_prefix})\n");
+    print("    -h, --help       - Display help and exit\n");
     print("\n");
+    exit(0);
 }
 
-sub build()
-{
-    # create project
-    if (! -d $cmake_work_dir) {
-        # create dir
-        mkpath($cmake_work_dir) or die("create directory '$cmake_work_dir' error\n");
-    }
-
-    # chdir
-    chdir($cmake_work_dir) or die("change directory '$cmake_work_dir' error\n");
-
-    # cmake init project
-    $cmake_init_cmd="cmake ${project_root_dir} -DCMAKE_BUILD_TYPE=${cmake_build_type}";
-
-    # cmake init project(add system option) https://cmake.org/cmake/help/v3.16/generator/Visual%20Studio%2016%202019.html#platform-selection
-    if ("$^O" eq "MSWin32") {
-        # Windows
-
-        # windows choose default processor
-        if ("${CMAKE_SYSTEM_PROCESSOR}" eq "") {
-            if (log(~0 +1)/log(2) eq 64) {
-                $CMAKE_SYSTEM_PROCESSOR = "x86_64";
-            } else {
-                $CMAKE_SYSTEM_PROCESSOR = "x86";
-            }
-        }
-
-        # init cmake
-        if ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86") {
-            $cmake_init_cmd="$cmake_init_cmd -A Win32";
-        } elsif ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86_64") {
-            $cmake_init_cmd="$cmake_init_cmd -A x64";
-        } else {
-            die("Target processor('$CMAKE_SYSTEM_PROCESSOR') error\n");
-        }
-
-        # cross compile
-        if ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86_64") {
-            if (${cmake_toolchain_file} eq "") {
-                $cmake_toolchain_file = "${project_toolchain_dir}/Windows_x86_64.cmake"
-            }
-
-        } elsif ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86") {
-            if (${cmake_toolchain_file} eq "") {
-                $cmake_toolchain_file = "${project_toolchain_dir}/Windows_x86.cmake"
-            }
-
-        } else {
-            die("Target processor('$CMAKE_SYSTEM_PROCESSOR') error\n");
-        }
-
-    } elsif ("$^O" eq "linux") {
-        # Linux
-
-        # cross compile
-        if ("${CMAKE_SYSTEM_PROCESSOR}" eq "") {
-            # no set is default
-
-        } elsif ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86_64") {
-            # 64bit do not change
-
-        } elsif ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86") {
-            # if x86_64 cross compile x86
-            if (log(~0 +1)/log(2) eq 64) {
-                if ("${CMAKE_SYSTEM_PROCESSOR}" eq "x86") {
-                    if (${cmake_toolchain_file} eq "") {
-                        $cmake_toolchain_file = "${project_toolchain_dir}/Linux_x86.cmake";
-                    }
-                }
-            }
-
-        } else {
-            # arm
-            $cmake_toolchain_file = "${project_toolchain_dir}/Linux_${CMAKE_SYSTEM_PROCESSOR}.cmake";
-
-            # arm must exist toolchain file
-            if ( ! -f ${cmake_toolchain_file}) {
-                die("Target processor('$CMAKE_SYSTEM_PROCESSOR') no toolchain file\n");
-            }
-        }
-    }
-
-    # cmake init add cross compile toolchain file option
-    if (${cmake_toolchain_file} ne "") {
-        # check exist
-        if (! -e $cmake_toolchain_file) {
-            die("Cross compile toolchinas not exist, file: '$cmake_toolchain_file'\n");
-        }
-        # append command
-        $cmake_init_cmd = "${cmake_init_cmd} -DCMAKE_TOOLCHAIN_FILE=$cmake_toolchain_file";
-    }
-
-    # cmake init add toolset
-    if (${cmake_toolset_name} ne "") {
-        # append command
-        $cmake_init_cmd = "${cmake_init_cmd} -T$cmake_toolset_name";
-    }
-
-    # cmake init add install prefix
-    if (${cmake_install_prefix} ne "") {
-        # append command
-        $cmake_init_cmd = "${cmake_init_cmd} -DCMAKE_INSTALL_PREFIX=$cmake_install_prefix";
-    }
-
-    # cmake init project
-    system("${cmake_init_cmd}") and die("Init cmake project error\n");
-
-    # cmake build
-    system("cmake --build . --config ${cmake_build_type}") and die("Build cmake project error\n");
-}
-
-sub install()
-{
-    if (-d $cmake_work_dir) {
-        chdir($cmake_work_dir) or die "change directory '$cmake_work_dir' error";
-        system("cmake -P cmake_install.cmake --install .") and die("Install cmake project error\n");
-    } else {
-        print("No install were found! $cmake_work_dir\n");
-    }
-}
-
-sub test()
-{
-    $project_test_dir = "$cmake_work_dir/tests";
-
-    if (-d $project_test_dir) {
-        chdir($project_test_dir) or die("change directory '$project_test_dir' error");
-        system("ctest .") and die("Test cmake project error\n");
-    } else {
-        print("No tests were found! $project_test_dir\n");
-    }
-}
-
-sub clean()
-{
-    if ( -d $project_build_dir) {
-        rmtree($project_build_dir, 0, 0);
-    }
-}
-
-# Command
-$cmd = shift @ARGV;
-
-# Options
-while (@ARGV) {
-    $a = shift @ARGV;
-    if ($a eq "-c") {
-        $cmake_toolchain_file = shift @ARGV;
-
-    } elsif ($a eq "-t") {
-        $cmake_build_type = shift @ARGV;
-
-    } elsif ($a eq "-p") {
-        $CMAKE_SYSTEM_PROCESSOR = shift @ARGV;
-
-    } elsif ($a eq "-T") {
-        $cmake_toolset_name = shift @ARGV;
-
-    } elsif ($a eq "--prefix") {
-        $cmake_install_prefix = shift @ARGV;
-
-    } elsif ($a eq "-h") {
-        help() and exit;
-
-    } else {
-        print("Invalid options '$a'\n\n");
-        help() and exit;
-    }
-}
-
-# Init variables
-if ($cmake_build_type ne "") {
-    $cmake_build_type = "Release";
-}
-$cmake_work_dir = "$project_build_dir/$^O/${CMAKE_SYSTEM_PROCESSOR}/$cmake_build_type";
-
-# Run
-if ($cmd eq "build") {
+# command
+if ("$cmd" eq "build") {
     build();
-} elsif ($cmd eq "test") {
+} elsif ("$cmd" eq "test") {
     test();
-} elsif ($cmd eq "install") {
+} elsif ("$cmd" eq "install") {
     install();
-}  elsif ($cmd eq "clean") {
+} elsif ("$cmd" eq "clean") {
     clean();
+} elsif ("$cmd" eq "help") {
+    help();
 } else {
-    help() and exit;
+    help();
 }
-
-chdir($project_root_dir)

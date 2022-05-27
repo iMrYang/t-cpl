@@ -1,3 +1,5 @@
+# CMake>=3.2, build cURL at least 3.2 version
+# CMake>=3.8, to support VS2017
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake;${CMAKE_MODULE_PATH}")
@@ -8,23 +10,17 @@ include(CheckCCompilerFlag)
 # Project
 project(C-PROJECT-LAYOUT C)
 
-# Target config
-if (NOT DEFINED CPROJECT_INSTALL_PREFIX)
-  set(CPROJECT_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/build/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/")
-endif()
-
 # Target option
 option(CPROJECT_BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(CPROJECT_BUILD_STATIC_LIBS "Build static libraries" ON)
 option(CPROJECT_BUILD_TESTS "Build tests" ON)
-option(CPROJECT_BUILD_APP "Build app" ON)
 option(CPROJECT_BUILD_EXAMPLES "Build examples" ON)
 
 # Compiler option
 option(PICKY_COMPILER "Enable picky compiler options" ON)
 if(WIN32)
   option(CPROJECT_STATIC_CRT "Set to ON to build with static CRT on Windows (/MT)." ON)
-  option(ENABLE_UNICODE "Set to ON to use the Unicode version of the Windows API functions" OFF)
+  option(CMAKE_ENABLE_UNICODE "Set to ON to use the Unicode version of the Windows API functions" OFF)
 endif()
 
 # Compiler
@@ -39,7 +35,7 @@ if(WIN32)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
   endif()
 
-  if(ENABLE_UNICODE)
+  if(CMAKE_ENABLE_UNICODE)
     add_definitions(-DUNICODE -D_UNICODE)
     if(MINGW)
       add_compile_options(-municode)
@@ -109,27 +105,25 @@ include(CheckCSourceCompiles)
 # depends options
 
 # initialize depends
-set(CPROJECT_DEPS_TARGETS "")
-set(CPROJECT_DEPS_LIBS "")
+add_custom_target(cproject_build_info
+  COMMAND ${CMAKE_COMMAND} -E echo "--------------------------------------------------------------------------------"
+  COMMAND ${CMAKE_COMMAND} -E echo "System   : ${CMAKE_SYSTEM_NAME}"
+  COMMAND ${CMAKE_COMMAND} -E echo "Processor: ${CMAKE_SYSTEM_PROCESSOR}"
+  COMMAND ${CMAKE_COMMAND} -E echo "Build    : ${CMAKE_BUILD_TYPE}"
+  COMMAND ${CMAKE_COMMAND} -E echo "CC       : ${CMAKE_C_COMPILER}"
+  COMMAND ${CMAKE_COMMAND} -E echo "CFLAGS   : ${CMAKE_C_FLAGS}"
+  COMMAND ${CMAKE_COMMAND} -E echo "--------------------------------------------------------------------------------"
+)
 
-find_package(Threads)
-link_libraries(${CMAKE_THREAD_LIBS_INIT})
-link_libraries(${CMAKE_DL_LIBS})
+find_package(Threads REQUIRED)
+set(CPROJECT_DEPS_TARGETS "cproject_build_info")
+set(CPROJECT_DEPS_LIBS ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 include(${CMAKE_CURRENT_LIST_DIR}/deps/CMakeLists.txt)
 
-# Info
-message(STATUS "--------------------------------------------------------------------------------")
-message(STATUS "SYSTEM   : ${CMAKE_SYSTEM_NAME}")
-message(STATUS "PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-message(STATUS "BUILD    : ${CMAKE_BUILD_TYPE}")
-message(STATUS "CC       : ${CMAKE_C_COMPILER}")
-message(STATUS "CFLAGS   : ${CMAKE_C_FLAGS}")
-message(STATUS "--------------------------------------------------------------------------------")
-
 # Include
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
-install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include DESTINATION include FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 # Source
 include(${CMAKE_CURRENT_LIST_DIR}/src/CMakeLists.txt)
@@ -137,11 +131,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/src/CMakeLists.txt)
 # Tests
 if(CPROJECT_BUILD_TESTS)
   add_subdirectory(tests)
-endif()
-
-# App
-if(CPROJECT_BUILD_APP)
-  add_subdirectory(app)
 endif()
 
 # Examples

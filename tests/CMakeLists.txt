@@ -2,61 +2,74 @@ include(CTest)
 enable_testing()
 
 # source files
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/   CPROJECT_TEST_SOURCE_FILES)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR} CPROJECT_TEST_SOURCE_FILES)
 
-# add suffix
-set(TEST_USE_SUFFIX  OFF)
-if (${CPROJECT_BUILD_CPROJECT_SHARED_LIBS} AND ${CPROJECT_BUILD_CPROJECT_STATIC_LIBS})
-  set(TEST_USE_SUFFIX  ON)
-endif()
+# add test
+foreach(_test_file ${CPROJECT_TEST_SOURCE_FILES})
+  # retrieve file name
+  STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" _test_file_name ${_test_file})
 
-# shared library test
-if (CPROJECT_BUILD_CPROJECT_SHARED_LIBS)
-  # add test
-  foreach(_test_file ${CPROJECT_TEST_SOURCE_FILES})
-    # retrieve file name
-    STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" _test_file_name ${_test_file})
-    # rename
-    if (TEST_USE_SUFFIX)
-      set(_test_file_name ${_test_file_name}_shared)
-    endif()
-    # exec
-    add_executable(${_test_file_name} ${_test_file})
-    # add depends
-    add_dependencies(${_test_file_name} ${CPROJECT_SHARED_LIBRARY})
-    # include library
-    target_include_directories(${_test_file_name} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY})
-    # link library
-    target_link_libraries(${_test_file_name} ${CPROJECT_SHARED_LIBRARY})
-    # copy shared library
-    if (MSVC)
-    add_custom_command(TARGET ${_test_file_name} POST_BUILD
-      # copy library to target directory
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CPROJECT_SHARED_LIBRARY_FILE} ./
+  # shared library test
+  if (CPROJECT_BUILD_SHARED_LIBS)
+    # shared name
+    set(_test_file_shared ${_test_file_name}_shared)
+    # target exec
+    add_executable(${_test_file_shared} ${_test_file})
+    # target exec add depends
+    add_dependencies(${_test_file_shared} ${CPROJECT_SHARED_LIBRARY})
+    # target exec include library
+    target_include_directories(${_test_file_shared} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY})
+    # target exec link library
+    target_link_libraries(${_test_file_shared} ${CPROJECT_SHARED_LIBRARY})
+    # target exec cmake config
+    set_target_properties(${_test_file_shared} PROPERTIES
+      # target output directory
+      ARCHIVE_OUTPUT_DIRECTORY          ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      LIBRARY_OUTPUT_DIRECTORY          ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      RUNTIME_OUTPUT_DIRECTORY          ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      ARCHIVE_OUTPUT_DIRECTORY_DEBUG    ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      LIBRARY_OUTPUT_DIRECTORY_DEBUG    ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      RUNTIME_OUTPUT_DIRECTORY_DEBUG    ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      ARCHIVE_OUTPUT_DIRECTORY_RELEASE  ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      LIBRARY_OUTPUT_DIRECTORY_RELEASE  ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      RUNTIME_OUTPUT_DIRECTORY_RELEASE  ${CPROJECT_SHARED_OUTPUT_DIRECTORY}
+      # clean and rebuild
+      CLEAN_DIRECT_OUTPUT               True
     )
-    endif()
     # add test
-    add_test(${_test_file_name} ${_test_file_name})
-  endforeach()
-endif()
+    add_test(${_test_file_shared} ${CPROJECT_SHARED_OUTPUT_DIRECTORY}/${_test_file_shared})
+  endif()
 
-# static library test
-if (CPROJECT_BUILD_CPROJECT_STATIC_LIBS)
-  # add test
-  foreach(_test_file ${CPROJECT_TEST_SOURCE_FILES})
-    # retrieve file name
-    STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" _test_file_name ${_test_file})
-    # rename
-    if (TEST_USE_SUFFIX)
-      set(_test_file_name ${_test_file_name}_static)
-    endif()
-    # add exec
-    add_executable(${_test_file_name} ${_test_file})
-    # add depends
-    add_dependencies(${_test_file_name} ${CPROJECT_STATIC_LIBRARY})
-    # link library
-    target_link_libraries(${_test_file_name} ${CPROJECT_STATIC_LIBRARY})
+  # static library test
+  if (CPROJECT_BUILD_STATIC_LIBS)
+    # static name
+    set(_test_file_static ${_test_file_name}_static)
+    # target exec
+    add_executable(${_test_file_static} ${_test_file})
+    # target exec add depends
+    add_dependencies(${_test_file_static} ${CPROJECT_STATIC_LIBRARY})
+    # target exec include library
+    target_include_directories(${_test_file_static} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY})
+    # target exec link library
+    target_link_libraries(${_test_file_static} ${CPROJECT_STATIC_LIBRARY})
+    # target exec cmake config
+    set_target_properties(${_test_file_static} PROPERTIES
+      # target output directory
+      ARCHIVE_OUTPUT_DIRECTORY          ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      LIBRARY_OUTPUT_DIRECTORY          ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      RUNTIME_OUTPUT_DIRECTORY          ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      ARCHIVE_OUTPUT_DIRECTORY_DEBUG    ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      LIBRARY_OUTPUT_DIRECTORY_DEBUG    ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      RUNTIME_OUTPUT_DIRECTORY_DEBUG    ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      ARCHIVE_OUTPUT_DIRECTORY_RELEASE  ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      LIBRARY_OUTPUT_DIRECTORY_RELEASE  ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      RUNTIME_OUTPUT_DIRECTORY_RELEASE  ${CPROJECT_STATIC_OUTPUT_DIRECTORY}
+      # clean and rebuild
+      CLEAN_DIRECT_OUTPUT               True
+    )
     # add test
-    add_test(${_test_file_name} ${_test_file_name})
-  endforeach()
-endif()
+    add_test(${_test_file_static} ${CPROJECT_STATIC_OUTPUT_DIRECTORY}/${_test_file_static})
+  endif()
+endforeach()
+
+
