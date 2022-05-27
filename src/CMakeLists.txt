@@ -16,7 +16,7 @@ if (CPROJECT_BUILD_SHARED_LIBS)
   # target library add define
   target_compile_definitions(${CPROJECT_SHARED_LIBRARY} PUBLIC -DCPROJECT_API=${CPROJECT_EXTERN_SYMBOL})
   # target library include directories
-  target_include_directories(${CPROJECT_SHARED_LIBRARY} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY})
+  target_include_directories(${CPROJECT_SHARED_LIBRARY} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY} ${CPROJECT_DEPS_INCLUDE_DIRS})
   # target library link third party libraries
   target_link_libraries(${CPROJECT_SHARED_LIBRARY} ${CPROJECT_DEPS_LIBS})
   # target library add depends
@@ -53,7 +53,7 @@ if (CPROJECT_BUILD_STATIC_LIBS)
   # target library add define
   target_compile_definitions(${CPROJECT_STATIC_LIBRARY} PUBLIC -DCPROJECT_API=${CPROJECT_EXTERN_SYMBOL})
   # target library include directories
-  target_include_directories(${CPROJECT_STATIC_LIBRARY} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY})
+  target_include_directories(${CPROJECT_STATIC_LIBRARY} PUBLIC ${CPROJECT_INCLUDE_DIRECTORY} ${CPROJECT_DEPS_INCLUDE_DIRS})
   # target library link third party libraries
   target_link_libraries(${CPROJECT_STATIC_LIBRARY} ${CPROJECT_DEPS_LIBS})
   # target library add depends

@@ -118,6 +118,7 @@ add_custom_target(cproject_build_info
 find_package(Threads REQUIRED)
 set(CPROJECT_DEPS_TARGETS "cproject_build_info")
 set(CPROJECT_DEPS_LIBS ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+set(CPROJECT_DEPS_INCLUDE_DIRS "")
 
 include(${CMAKE_CURRENT_LIST_DIR}/deps/CMakeLists.txt)
 
