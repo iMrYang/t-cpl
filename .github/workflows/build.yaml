@@ -40,9 +40,7 @@ jobs:
           draft: false                              # 是否为未发布版本
           prerelease: false                         # 是否为预览版         
         run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."  
-        run: echo "💡 The ${{ secrets.GITHUB_TOKEN }} secrets"      
-      - name: Show
-        run
+        run: echo "💡 The ${{ secrets.GITHUB_TOKEN }} secrets"    
       # upload
       #- name: Upload Release Artifact
       #  uses: actions/upload-release-asset@v1
