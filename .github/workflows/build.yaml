@@ -27,28 +27,32 @@ jobs:
       # tag
       - name: TAG (x86_64)
         run: tar -zcvf install_x86_64.tar.gz ./install
-      # release
+      # 发布版本
       - name: Release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          token: ${{secrets.TOKEN}}
-          draft: false
-          prerelease: false
+          tag_name: ${{ github.ref }}               # 标签名称
+          release_name: Release ${{ github.ref }}   # 版本名称
+          body_path:                                # 版本发布内容文件         
+          draft: false                              # 是否为未发布版本
+          prerelease: false                         # 是否为预览版         
+        run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."  
+        run: echo "💡 The ${{ secrets.GITHUB_TOKEN }} secrets"      
+      - name: Show
+        run
       # upload
-      - name: Upload Release Artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./install_x86_64.tar.gz
-          asset_name: install_x86_64.tar.gz
-          asset_content_type: application/gzip
+      #- name: Upload Release Artifact
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      #  with:
+      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #    asset_path: ./install_x86_64.tar.gz
+      #    asset_name: install_x86_64.tar.gz
+      #    asset_content_type: application/gzip
       # clean
       - name: Clean
         run: perl scripts/manage.pl clean
