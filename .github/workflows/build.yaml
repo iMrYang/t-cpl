@@ -2,9 +2,13 @@ name: build
 
 on:
   pull_request:
-    branches: [ develop*,tag* ]
+    branches: '*'
+    tags:
+      - '*'
   push:
-    branches: [ develop*,tag* ]
+    branches: '*'
+    tags:
+      - '*'
 
 jobs:
   # Linux x86_64
