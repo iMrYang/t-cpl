@@ -26,7 +26,9 @@ jobs:
         run: perl scripts/manage.pl install
       # tag
       - name: TAG (x86_64)
-        run: tar -zcvf install_x86_64.tar.gz ./install
+        run: tar -zcvf install_x86_64.tar.gz ./install    
+        run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."  
+        run: echo "💡 The ${{ secrets.GITHUB_TOKEN }} secrets"    
       # 发布版本
       - name: Release
         id: create_release
@@ -38,9 +40,7 @@ jobs:
           release_name: Release ${{ github.ref }}   # 版本名称
           body_path:                                # 版本发布内容文件         
           draft: false                              # 是否为未发布版本
-          prerelease: false                         # 是否为预览版         
-        run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."  
-        run: echo "💡 The ${{ secrets.GITHUB_TOKEN }} secrets"    
+          prerelease: false                         # 是否为预览版     
       # upload
       #- name: Upload Release Artifact
       #  uses: actions/upload-release-asset@v1
