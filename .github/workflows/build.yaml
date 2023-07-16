@@ -14,7 +14,7 @@ jobs:
   # Linux x86_64
   build-linux-x86_64:
     name: linux_x86_64
-    runs-on: ubuntu-20
+    runs-on: ubuntu:latest
     steps:
       # checkout code
       - name: Checkout
