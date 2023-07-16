@@ -36,21 +36,21 @@ jobs:
       - name: show2
         run: echo "💡 The ${{ secrets.GITHUB_TOKEN }} secrets"    
       # 发布版本
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: install_x86_64.tar.gz
+      #- name: Release
+      #  uses: softprops/action-gh-release@v1
+      #  if: startsWith(github.ref, 'refs/tags/')
+      #  with:
+      #    files: install_x86_64.tar.gz
 
       
-      #- name: Release
-      #  id: create_release
-      #  uses: actions/create-release@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #  with:
-      #    tag_name: Tag ${{ github.ref }}           # 标签名称
-      #    release_name: Release ${{ github.ref }}   # 版本名称 
+      - name: Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: Tag ${{ github.ref }}           # 标签名称
+          release_name: Release ${{ github.ref }}   # 版本名称 
       # upload
       #- name: Upload Release Artifact
       #  uses: actions/upload-release-asset@v1
